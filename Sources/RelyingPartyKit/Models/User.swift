@@ -31,6 +31,12 @@ public struct OTPChallenge: Decodable {
     
     /// The time when the verification expires.
     public let expiry: Date
+    
+    private enum CodingKeys: String, CodingKey {
+        case transactionId = "id"
+        case correlation
+        case expiry
+    }
 }
 
 /// A strucutre that describes a one-time password verification.
