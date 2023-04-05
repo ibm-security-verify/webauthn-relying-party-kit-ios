@@ -30,13 +30,13 @@ public struct FIDO2Challenge: Decodable {
     public let challenge: String
     
     /// The unique identifier of the user account.
-    public let userId: String
+    public let userId: String?
     
     /// The name of the user requesting the challenge.
-    public let name: String
+    public let name: String?
     
     /// The display name of the user requesting the challenge.
-    public let displayName: String
+    public let displayName: String?
 }
 
 /// A structure representing a FIDO2 registration.
