@@ -34,6 +34,9 @@ public struct FIDO2Challenge: Decodable {
     
     /// The name of the user requesting the challenge.
     public let name: String
+    
+    /// The display name of the user requesting the challenge.
+    public let displayName: String
 }
 
 /// A structure representing a FIDO2 registration.
