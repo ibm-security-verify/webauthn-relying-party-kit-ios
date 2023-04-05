@@ -298,7 +298,7 @@ public struct RelyingPartyClient {
                                              authenticatorData: authenticatorData.base64UrlEncodedString(),
                                              credentialId: credentialId.base64UrlEncodedString(),
                                              signature: signature.base64UrlEncodedString(),
-                                             userHandle: String(decoding: userId, as: UTF8.self))
+                                             userHandle: userId.base64UrlEncodedString())
         let body = try JSONEncoder().encode(verification)
         let url = baseURL.appendingPathComponent("/v1/signin")
         
