@@ -28,6 +28,15 @@ struct ChallengeRequest: Encodable {
 public struct FIDO2Challenge: Decodable {
     /// The unique challenge that is used as part of this attestation or assertion attempt.
     public let challenge: String
+    
+    /// The unique identifier of the user account.
+    public let userId: String?
+    
+    /// The name of the user requesting the challenge.
+    public let name: String?
+    
+    /// The display name of the user requesting the challenge.
+    public let displayName: String?
 }
 
 /// A structure representing a FIDO2 registration.
