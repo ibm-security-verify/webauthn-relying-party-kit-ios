@@ -64,12 +64,13 @@ let nickname = "Anne's iPhone"
 // First generate a challenge from the relying party server.
 let result = try await client.challenge(type: .attestation, displayName: nickname, token: token)
 let challenge = result.challenge.base64UrlEncodedStringWithPadding
+let userId = Data(base64Encoded: result.userId!.base64UrlEncodedStringWithPadding)!
 
 // Construct a request to the platform provider with the challenge. The challenge result contains the user identifier and name for Passkey registration.
 let provider = ASAuthorizationPlatformPublicKeyCredentialProvider(relyingPartyIdentifier: "example.com")
 let request = provider.createCredentialRegistrationRequest(challenge: Data(base64Encoded: challenge)!, 
-    name: result.name,
-    userID: Data(result.userId.utf8))
+    name: result.name!,
+    userID: userId
 let controller = ASAuthorizationController(authorizationRequests: [request])
     controller.delegate = self
     controller.presentationContextProvider = self
