@@ -16,7 +16,7 @@ Go to the [Apple Developer Site](https://developer.apple.com/documentation/authe
 RelyingPartyKit is available as a Swift Package Manager package.  To use it, specify the package as a dependency in your Xcode project or `Package.swift` file:
 
 ```
-.package(url: "https://github.com/ibm-security-verify/webauthn-relying-party-kit-ios.git"),
+package(url: "https://github.com/ibm-security-verify/webauthn-relying-party-kit-ios.git")
 ```
 
 ## Contents
