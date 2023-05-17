@@ -7,7 +7,7 @@ import Foundation
 /// WebAuthn credential options that represents a response to a client's request for generation of a new attestation or assertion.
 public protocol CredentialsOptions {
     /// A time, in milliseconds, that the Relying Party is willing to wait for the call to complete.
-    var timeout: Int? {
+    var timeout: Int {
         get
     }
     
@@ -20,25 +20,25 @@ public protocol CredentialsOptions {
 /// A structure representing a WebAuthn [PublicKeyCredentialCreationOptions](https://w3c.github.io/webauthn/#dictionary-makecredentialoptions).
 public struct CredentialRegistrationOptions: CredentialsOptions, Codable {
     public let challenge: Data
-    public let timeout: Int?
+    public let timeout: Int
     
     /// Contains a name and an identifier for the Relying Party responsible for the request.
-    let rp: Rp
+    public let rp: Rp
     
     /// Contains names and an identifier for the user account performing the registration.
-    let user: User
+    public let user: User
     
     /// A list any existing credentials mapped to this user account (as identified by `user.id`).
-    let excludeCredentials: [ExcludeCredential]?
+    public let excludeCredentials: [ExcludeCredential]?
     
     /// The capabilities and settings that the authenticator.
-    let authenticatorSelection: AuthenticatorSelection?
+    public let authenticatorSelection: AuthenticatorSelection?
     
     /// A list of key types and signature algorithms the Relying Party supports, ordered from most preferred to least preferred.
-    let pubKeyCredParams: [PubKeyCredParam]
+    public let pubKeyCredParams: [PubKeyCredParam]
     
     /// Additional processing containing the client extension input.
-    let extensions: Extension?
+    public let extensions: Extension?
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -47,7 +47,7 @@ public struct CredentialRegistrationOptions: CredentialsOptions, Codable {
         let challenge = try container.decode(String.self, forKey: .challenge).base64UrlEncodedStringWithPadding
         self.challenge = Data(base64Encoded: challenge)!
         
-        self.timeout = try container.decodeIfPresent(Int.self, forKey: .timeout) ?? 240000
+        self.timeout = try container.decode(Int.self, forKey: .timeout)
         self.rp = try container.decode(Rp.self, forKey: .rp)
         self.user = try container.decode(User.self, forKey: .user)
         self.excludeCredentials = try container.decodeIfPresent([ExcludeCredential].self, forKey: .excludeCredentials) ?? []
@@ -59,13 +59,13 @@ public struct CredentialRegistrationOptions: CredentialsOptions, Codable {
     /// The name and identifier for the user account performing the registration.
     public struct User: Codable {
         /// An identifier for a user account.
-        let id: Data
+        public let id: Data
         
         /// A human-palatable name for the entity.
-        var name: String
+        public let name: String
         
         /// A human-palatable name for the user account, intended only for display.
-        let displayName: String
+        public let displayName: String
         
         public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -82,43 +82,43 @@ public struct CredentialRegistrationOptions: CredentialsOptions, Codable {
     /// The capabilities and settings that the authenticator.
     public struct AuthenticatorSelection: Codable {
         /// Eligible authenticators are filtered to be only those authenticators attached with the specified authenticator attachment modality.  i.e `platform` or `cross-platform`.
-        let authenticatorAttachment: String
+        public let authenticatorAttachment: String
         
         /// The extent to which the Relying Party desires to create a client-side discoverable credential. i.e `discouraged`, `preferred` or `required`.
-        let residentKey: String
+        public let residentKey: String
         
         /// Whether registration requires a resident key.
-        let requireResidentKey: Bool
+        public let requireResidentKey: Bool
         
         /// Specifies the Relying Party's requirements regarding user verification.  i.e `discouraged`, `preferred` or `required`.
-        let userVerification: String
+        public let userVerification: String
     }
     
     /// The key type and signature algorithm the Relying Party supports, ordered from most preferred to least preferred.
     public struct PubKeyCredParam: Codable {
         /// A number identifying a cryptographic algorithm
-        let alg: Int
+        public let alg: Int
         
         /// The type of credential to be created.
-        let type: String
+        public let type: String
     }
 
     /// The identifier and type of an existing credentials mapped to a user account.
     public struct ExcludeCredential: Codable {
         /// contains the credential ID
-        let id: String
+        public  let id: String
 
         /// The type of the public key credential
-        let type: String
+        public let type: String
     }
     
     /// The name and identifier for the Relying Party responsible for the request.
     public struct Rp: Codable {
         /// A unique identifier for the Relying Party entity.
-        let id: String
+        public let id: String
         
         /// A human-palatable name for the Relying Party entity.
-        let name: String
+        public let name: String
     }
     
     /// Additional processing containing the client extension input.
@@ -129,16 +129,16 @@ public struct CredentialRegistrationOptions: CredentialsOptions, Codable {
 /// A structure representing a WebAuthn [PublicKeyCredentialRequestOptions)](https://w3c.github.io/webauthn/#dictdef-publickeycredentialrequestoptions).
 public struct CredentialAssertionOptions: CredentialsOptions, Codable {
     public let challenge: Data
-    public let timeout: Int?
+    public let timeout: Int
     
     /// Specifies the RP ID claimed by the Relying Party.
-    let rpId: String?
+    public let rpId: String
     
     /// A list used by the client to find authenticators eligible for this authentication ceremony.
-    let allowCredentials: [AllowCredential]?
+    public let allowCredentials: [AllowCredential]?
     
     /// Additional processing containing the client extension input.
-    let extensions: Extension?
+    public let extensions: Extension?
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -147,20 +147,19 @@ public struct CredentialAssertionOptions: CredentialsOptions, Codable {
         let challenge = try container.decode(String.self, forKey: .challenge).base64UrlEncodedStringWithPadding
         self.challenge = Data(base64Encoded: challenge)!
         
-        self.rpId = try container.decodeIfPresent(String.self, forKey: .rpId)
-        self.timeout = try container.decodeIfPresent(Int.self, forKey: .timeout) ?? 240000
+        self.rpId = try container.decode(String.self, forKey: .rpId)
+        self.timeout = try container.decode(Int.self, forKey: .timeout)
         self.allowCredentials = try container.decodeIfPresent([AllowCredential].self, forKey: .allowCredentials) ?? []
         self.extensions = try container.decodeIfPresent(Extension.self, forKey: .extensions)
     }
     
-
     /// The identifier and type of an existing credentials mapped to a user account.
     public struct AllowCredential: Codable {
         /// Contains the credential ID
-        let id: String
+        public let id: String
 
         /// The type of the public key credential
-        let type: String
+        public let type: String
     }
     
     /// Additional processing containing the client extension input.
