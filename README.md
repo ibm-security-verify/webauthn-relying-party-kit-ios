@@ -5,7 +5,7 @@ Deliver Apple Passkey solutions to your users.
 ## Overview
 
 
-The IBM Security Verify Relying Party Kit for iOS is the client-side companion to [IBM Security Verify Relying Party Server for Swift](https://github.com/ibm-security-verify/webauthn-relying-party-server-swift) which exposes REST API's hosted in a Docker image. 
+The IBM Security Verify Relying Party Kit for iOS is the client-side companion to [IBM Security Verify Relying Party Server for Swift](https://github.com/ibm-security-verify/relying-party-server) which exposes REST API's hosted in a Docker image. 
 
 RelyingPartyKit is a lightweight framework that provides the ability for existing users to register their device with Apple Passkey and subsequently sign-in without a password and for new users to sign-up and validate their account.
 
@@ -16,7 +16,7 @@ Go to the [Apple Developer Site](https://developer.apple.com/documentation/authe
 RelyingPartyKit is available as a Swift Package Manager package.  To use it, specify the package as a dependency in your Xcode project or `Package.swift` file:
 
 ```
-package(url: "https://github.com/ibm-security-verify/webauthn-relying-party-kit-ios.git")
+.package(url: "https://github.com/ibm-security-verify/relyingpartykit.git")
 ```
 
 ## Contents
@@ -33,7 +33,7 @@ let client = RelyingPartyClient(baseURL: URL(string: "https://example.com")!)
 // The result is an OTPChallenge to correlate the email sent to the email address.
 let result = try await client.signup(name: "Anne Johnson", email: "anne_johnson@icloud.com")
 
-// Use the result.transactionId and the OTP value generated in the email to validate.   If successful, the returned Token can be used to register for Passkey.
+// Use the result.transactionId and the OTP value generated in the email to validate. If successful, the returned Token can be used to register for Passkey.
 let token = try await client.validate(transactionId: result.transactionId, otp: "123456")
 ```
 
@@ -62,15 +62,13 @@ let client = RelyingPartyClient(baseURL: URL(string: "https://example.com")!)
 let nickname = "Anne's iPhone"
 
 // First generate a challenge from the relying party server.
-let result = try await client.challenge(type: .attestation, displayName: nickname, token: token)
-let challenge = result.challenge.base64UrlEncodedStringWithPadding
-let userId = Data(base64Encoded: result.userId!.base64UrlEncodedStringWithPadding)!
+let result: CredentialRegistrationOptions = try await client.challenge(displayName: nickname, token: token)
 
 // Construct a request to the platform provider with the challenge. The challenge result contains the user identifier and name for Passkey registration.
 let provider = ASAuthorizationPlatformPublicKeyCredentialProvider(relyingPartyIdentifier: "example.com")
-let request = provider.createCredentialRegistrationRequest(challenge: Data(base64Encoded: challenge)!, 
-    name: result.name!,
-    userID: userId
+let request = provider.createCredentialRegistrationRequest(challenge: result.challenge, 
+    name: result.user.name,
+    userID: result.user.id)
 let controller = ASAuthorizationController(authorizationRequests: [request])
     controller.delegate = self
     controller.presentationContextProvider = self
@@ -103,12 +101,11 @@ import RelyingPartyKit
 let client = RelyingPartyClient(baseURL: URL(string: "https://example.com")!)
 
 // First generate a challenge from the relying party server.
-let result = try await client.challenge(type: .assertion)
-let challenge = result.challenge.base64UrlEncodedStringWithPadding
+let result: CredentialAssertionOptions = try await client.challenge()
 
 // Construct a request to the platform provider with the challenge.
 let provider = ASAuthorizationPlatformPublicKeyCredentialProvider(relyingPartyIdentifier: "example.com")
-let request = provider.createCredentialAssertionRequest(challenge: Data(base64Encoded: challenge)!)
+let request = provider.createCredentialAssertionRequest(challenge: result.challenge)
 let controller = ASAuthorizationController(authorizationRequests: [request])
     controller.delegate = self
     controller.presentationContextProvider = self
