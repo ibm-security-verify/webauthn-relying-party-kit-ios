@@ -6,6 +6,7 @@ import XCTest
 @testable import RelyingPartyKit
 
 final class RelyingPartyKitTests: XCTestCase {
+    /// Replace this placeholder with a value representing your environment.
     let baseURL = "https://rps-app.vb76iz9iykg.au-syd.codeengine.appdomain.cloud"
     
     func testAuthenticate() async throws {
@@ -53,20 +54,78 @@ final class RelyingPartyKitTests: XCTestCase {
         let client = RelyingPartyClient(baseURL: URL(string: baseURL)!)
         
         // When
-        let result = try await client.challenge(type: .assertion)
+        let result: CredentialAssertionOptions = try await client.challenge()
         
         // Then
         XCTAssertNotNil(result)
     }
     
-    func testChallengeAttestation() async throws {
+    func testChallengeAssertionWithDisplayName() async throws {
+        // Given
+        let client = RelyingPartyClient(baseURL: URL(string: baseURL)!)
+        
+        // When
+        let result: CredentialAssertionOptions = try await client.challenge(displayName: "John")
+        
+        // Then
+        XCTAssertNotNil(result)
+    }
+    
+    func testChallengeAssertionWithToken() async throws {
+        // Given
+        let client = RelyingPartyClient(baseURL: URL(string: baseURL)!)
+        
+        // When
+        let token = try await client.authenticate(username: "account@example.com", password: "a1b2c3d4")
+        let result: CredentialAssertionOptions = try await client.challenge(token: token)
+        
+        // Then
+        XCTAssertNotNil(result)
+    }
+    
+    func testChallengeAssertionWithTokenAndDisplayName() async throws {
+        // Given
+        let client = RelyingPartyClient(baseURL: URL(string: baseURL)!)
+        
+        // When
+        let token = try await client.authenticate(username: "account@example.com", password: "a1b2c3d4")
+        let result: CredentialAssertionOptions = try await client.challenge(displayName: "John", token: token)
+        
+        // Then
+        XCTAssertNotNil(result)
+    }
+    
+    func testChallengeAttestationErrorNoDisplay() async throws {
         // Given
         let client = RelyingPartyClient(baseURL: URL(string: baseURL)!)
         
         // When
         do {
             let token = try await client.authenticate(username: "account@example.com", password: "a1b2c3d4")
-            _ = try await client.challenge(type: .attestation, token: token)
+            let _: CredentialRegistrationOptions = try await client.challenge(token: token)
+            
+            // Then
+        }
+        catch let error {
+            // Then
+            XCTAssertNotNil(error, error.localizedDescription)
+        }
+    }
+    
+    func testChallengeAttestationWithDisplayName() async throws {
+        // Given
+        let client = RelyingPartyClient(baseURL: URL(string: baseURL)!)
+        
+        // When
+        do {
+            let token = try await client.authenticate(username: "scott", password: "!Passw0rd")
+            let result: CredentialRegistrationOptions = try await client.challenge(displayName: "John", token: token)
+            
+            // Then
+            XCTAssertNotNil(result)
+            
+            // Then
+            XCTAssertNotNil(result.user.displayName == "John")
         }
         catch let error {
             // Then

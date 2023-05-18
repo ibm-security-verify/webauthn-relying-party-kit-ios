@@ -139,7 +139,6 @@ public struct RelyingPartyClient {
     
     /// A request to generate a WebAuthn challenge.
     /// - Parameters:
-    ///   - type: The type of FIDO2 challenge.
     ///   - displayName: The display name used by the authenticator for UI representation.
     ///   - token: Represents an access token.
     ///
@@ -148,9 +147,9 @@ public struct RelyingPartyClient {
     /// // Create an instance of the client.
     /// let client = RelyingPartyClient(baseURL: URL(string: "https://example.com")!)
     /// let token = try await client.authenticate(username: "johnc@email.com", password: "a1b2c3d4")
-    /// let result = try await client.challenge(type: .attestation, displayName: "John Citizen iPhone", token: token)
+    /// let result: CredentialRegistrationOptions = try await client.challenge(displayName: "John Citizen iPhone", token: token)
     ///
-    /// // Print the challenge.
+    /// // Print the credential options.
     /// print(result)
     /// ```
     ///
@@ -158,17 +157,21 @@ public struct RelyingPartyClient {
     /// ```
     /// // Create an instance of the client.
     /// let client = RelyingPartyClient(baseURL: URL(string: "https://example.com")!)
-    /// let result = try await client.challenge(type: .assertion)
+    /// let result: CredentialAssertionOptions = try await client.challenge()
     ///
     /// // Print the challenge.
     /// print(result)
     /// ```
     ///
     /// A successful one-time password vallidation results in the user account being created.
-    public func challenge(type: ChallengeType, displayName: String? = nil, token: Token? = nil) async throws -> FIDO2Challenge {
+    public func challenge<T>(displayName: String? = nil, token: Token? = nil) async throws -> T where T: CredentialsOptions {
         // Create and encode the FIDO challenge request.
-        let challenge = ChallengeRequest(displayName: displayName, type: type)
-        let body = try JSONEncoder().encode(challenge)
+        let body = """
+            {
+                "type": "\(String(describing: T.self) == "CredentialAssertionOptions" ? "assertion" : "attestation")",
+                "displayName": "\(displayName ?? "")"
+            }
+        """.data(using: .utf8)!
         let url = baseURL.appendingPathComponent("/v1/challenge")
         
         // Set the request properties.
@@ -189,7 +192,15 @@ public struct RelyingPartyClient {
             throw String(decoding: data, as: UTF8.self)
         }
         
-        return try self.decoder.decode(FIDO2Challenge.self, from: data)
+        // Create the CredentialOptions object.
+        switch T.self {
+        case is CredentialAssertionOptions.Type:
+            return try JSONDecoder().decode(CredentialAssertionOptions.self, from: data) as! T
+        case is CredentialRegistrationOptions.Type:
+            return try JSONDecoder().decode(CredentialRegistrationOptions.self, from: data) as! T
+        default:
+            throw String("Error occurred parsing challenge data from relying party.")
+        }
     }
     
     /// A request to present an attestation object containing a public key to the server for attestation verification and storage.
