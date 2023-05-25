@@ -113,7 +113,6 @@ let controller = ASAuthorizationController(authorizationRequests: [request])
 // This will show the Passkey sheet for the user to continue with the registration and provides the outcome of the registration request on the ASAuthorizationControllerDelegate.
 controller.performRequests()
 
-
 // Respond to the request
 func authorizationController(controller: controller, didCompleteWithAuthorization: authorization) {
     if let credential = authorization.credential as? ASAuthorizationPlatformPublicKeyCredentialAssertion {
