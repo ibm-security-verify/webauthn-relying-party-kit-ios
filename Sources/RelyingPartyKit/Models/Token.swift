@@ -4,8 +4,8 @@
 
 import Foundation
 
-/// An interface for decoding authentication methods.
-public protocol AuthenticationMethod: Decodable {}
+/// An interface for generating an authentication method.
+public protocol AuthenticationMethod: Codable {}
 
 /// Represent cookie-based session headers.
 @dynamicMemberLookup
