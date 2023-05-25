@@ -7,7 +7,7 @@ import XCTest
 
 final class RelyingPartyKitTests: XCTestCase {
     /// Replace this placeholder with a value representing your environment.
-    let baseURL = "https://rps-app.vb76iz9iykg.au-syd.codeengine.appdomain.cloud"
+    let baseURL = "example.com"
     
     func testAuthenticate() async throws {
         // Where
@@ -118,8 +118,8 @@ final class RelyingPartyKitTests: XCTestCase {
         
         // When
         do {
-            let token = try await client.authenticate(username: "scott", password: "!Passw0rd")
-            let result: CredentialRegistrationOptions = try await client.challenge(displayName: "John", token: token)
+            let token = try await client.authenticate(username: "account@example.com", password: "a1b2c3d4")
+            let result: CredentialRegistrationOptions = try await client.challenge(displayName: "John", token: token, headers: ["foo": "bar", "pet": "dog"])
             
             // Then
             XCTAssertNotNil(result)
@@ -133,7 +133,28 @@ final class RelyingPartyKitTests: XCTestCase {
         }
     }
     
-    func testRegister() async throws {
+    func testChallengeAttestationWithHeaders() async throws {
+        // Given
+        let client = RelyingPartyClient(baseURL: URL(string: baseURL)!)
+        
+        // When
+        do {
+            let token = try await client.authenticate(username: "account@example.com", password: "a1b2c3d4")
+            let result: CredentialRegistrationOptions = try await client.challenge(displayName: "John", token: token, headers: ["foo": "bar", "pet": "dog"])
+            
+            // Then
+            XCTAssertNotNil(result)
+            
+            // Then
+            XCTAssertNotNil(result.user.displayName == "John")
+        }
+        catch let error {
+            // Then
+            XCTAssertNotNil(error, error.localizedDescription)
+        }
+    }
+    
+    func testRegisterWithToken() async throws {
         // Given
         let client = RelyingPartyClient(baseURL: URL(string: baseURL)!)
         
@@ -152,17 +173,55 @@ final class RelyingPartyKitTests: XCTestCase {
         }
     }
     
-    func testSignin() async throws {
+    func testRegisterWithHeaders() async throws {
         // Given
         let client = RelyingPartyClient(baseURL: URL(string: baseURL)!)
         
         // When
         do {
-            _ = try await client.signin(signature: Data("signature".utf8),
+            _ = try await client.register(nickname: "John's iPhone",
+                                          clientDataJSON: Data("clientDataJSON".utf8),
+                                          attestationObject: Data("attestationObject".utf8),
+                                          credentialId: Data("credentialId".utf8),
+                                          headers: ["auth_session": "a1b2v3d4"])
+        }
+        catch let error {
+            // Then
+            XCTAssertNotNil(error, error.localizedDescription)
+        }
+    }
+    
+    func testSigninToken() async throws {
+        // Given
+        let client = RelyingPartyClient(baseURL: URL(string: baseURL)!)
+        
+        // When
+        do {
+            let _: Token = try await client.signin(signature: Data("signature".utf8),
                                         clientDataJSON: Data("clientDataJSON".utf8),
                                         authenticatorData: Data("authenticatorData".utf8),
                                         credentialId: Data("credentialId".utf8),
                                         userId: Data("userId".utf8))
+        }
+        catch let error {
+            // Then
+            XCTAssertNotNil(error, error.localizedDescription)
+        }
+    }
+    
+    func testSigninCookie() async throws {
+        // Given
+        let client = RelyingPartyClient(baseURL: URL(string: baseURL)!)
+        
+        // When
+        do {
+            let _: Cookies = try await client.signin(signature: Data("signature".utf8),
+                                        clientDataJSON: Data("clientDataJSON".utf8),
+                                        authenticatorData: Data("authenticatorData".utf8),
+                                        credentialId: Data("credentialId".utf8),
+                                        userId: Data("userId".utf8))
+            
+            
         }
         catch let error {
             // Then

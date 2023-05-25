@@ -141,6 +141,11 @@ public struct RelyingPartyClient {
     /// - Parameters:
     ///   - displayName: The display name used by the authenticator for UI representation.
     ///   - token: Represents an access token.
+    ///   - headers: A dictionary of custom headers to include in the request.
+    ///
+    ///
+    /// The `headers` parameter is provided for convenience to support callers using cookie-based authentication.  The relying party server should also support cookie-based authentication for this method to complete.
+    ///
     ///
     /// An example request for obtaining a challenge for registration:
     /// ```
@@ -164,7 +169,7 @@ public struct RelyingPartyClient {
     /// ```
     ///
     /// A successful one-time password vallidation results in the user account being created.
-    public func challenge<T>(displayName: String? = nil, token: Token? = nil) async throws -> T where T: CredentialsOptions {
+    public func challenge<T>(displayName: String? = nil, token: Token? = nil, headers: [String: String]? = nil) async throws -> T where T: CredentialsOptions {
         // Create and encode the FIDO challenge request.
         let body = """
             {
@@ -184,6 +189,12 @@ public struct RelyingPartyClient {
             request.setValue(token.authorizationHeader, forHTTPHeaderField: "Authorization")
         }
         
+        // Add additional headers if available.
+        if let headers = headers, var allHeaders = request.allHTTPHeaderFields {
+            allHeaders.merge(headers) { (current, _) in current }
+            request.allHTTPHeaderFields = allHeaders
+        }
+        
         // Submit the request and decode the response.
         let (data, response) = try await URLSession.shared.upload(for: request, from: body)
         
@@ -193,76 +204,7 @@ public struct RelyingPartyClient {
         }
         
         // Create the CredentialOptions object.
-        switch T.self {
-        case is CredentialAssertionOptions.Type:
-            return try JSONDecoder().decode(CredentialAssertionOptions.self, from: data) as! T
-        case is CredentialRegistrationOptions.Type:
-            return try JSONDecoder().decode(CredentialRegistrationOptions.self, from: data) as! T
-        default:
-            throw String("Error occurred parsing challenge data from relying party.")
-        }
-    }
-    
-    /// A request to present an attestation object containing a public key to the server for attestation verification and storage.
-    /// - Parameters:
-    ///   - nickname: The friendly name for the registration.
-    ///   - clientDataJSON: Raw data that contains a JSON-compatible encoding of the client data.
-    ///   - attestationObject: A data object that contains the returned attestation.
-    ///   - credentialId: An identifier that the authenticator generates during registration to uniquely identify a specific credential.
-    ///   - token: Represents an access token.
-    ///
-    /// An example request for registering a FIDO authenticator:
-    /// ```
-    /// // Register a new account on a service
-    /// let client = RelyingPartyClient(baseURL: URL(string: "https://example.com")!)
-    /// let token = try await client.authenticate(username: anne_johnson, password: "a1b2c3d4")
-    /// let data = try await client.challenge(type: .attestation, token: token)
-    ///
-    /// // Obtain this from the server using client.challenge(type: .attestation, token: token)
-    /// var challenge: Data(data.utf8)
-    /// let platformProvider = ASAuthorizationPlatformPublicKeyCredentialProvider("example.com")
-    /// let platformKeyRequest = platformProvider.createCredentialRegistrationRequest(challenge: challenge, displayName: "Anne Johnson", userID: "anne_johnson")
-    /// let authController = ASAuthorizationController([platformKeyRequest])
-    /// authController.delegate = self
-    /// authController.presentationContextProvider = self
-    /// authController.performRequests()
-    ///
-    /// // Respond to the request.
-    /// func authorizationController(controller: controller, didCompleteWithAuthorization: authorization) {
-    ///  if let credential = authorization.credential as? ASAuthorizationPlatformPublicKeyCredentialRegistration {
-    ///    // Take steps to handle the registration.
-    ///    try await client.register(nickname: "anne_johnson", clientDataJSON: credential.rawClientDataJSON, attestationObject: credential.rawAttestationObject, credentialId: credential.userID, token: token)
-    ///  }
-    /// }
-    ///
-    /// func authorizationController(controller: controller, didCompleteWithError: error) {
-    ///  // Handle the error.
-    ///}
-    /// ```
-    public func register(nickname: String, clientDataJSON: Data, attestationObject: Data, credentialId: Data, token: Token) async throws {
-        // Create and encode the FIDO2 registration data.
-        let registration = FIDO2Registration(nickname: nickname,
-                                             clientDataJSON: clientDataJSON.base64UrlEncodedString(),
-                                             attestationObject: attestationObject.base64UrlEncodedString(),
-                                             credentialId: credentialId.base64UrlEncodedString())
-        let body = try JSONEncoder().encode(registration)
-        print("Register: \(registration)")
-        
-        let url = baseURL.appendingPathComponent("/v1/register")
-        
-        // Set the request properties.
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(token.authorizationHeader, forHTTPHeaderField: "Authorization")
-        
-        // Submit the request and decode the response.
-        let (data, response) = try await URLSession.shared.upload(for: request, from: body)
-        
-        // Check the response status for 200 range.
-        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-            throw String(decoding: data, as: UTF8.self)
-        }
+        return try self.decoder.decode(T.self, from: data)
     }
     
     /// A request to present the signed challenge to the server for verification.
@@ -274,18 +216,18 @@ public struct RelyingPartyClient {
     ///   - userId:The userId provided when creating this credential.
     /// - Returns: A ``Token`` representing an authenticated user.
     ///
-    /// An example request for registering a FIDO authenticator:
+    /// An example request perfroming a password-less sign-in using a registered FIDO authenticator:
     /// ```
     /// var token: Token?
     ///
     /// // Connect to a service with an existing account.
     /// let client = RelyingPartyClient(baseURL: URL(string: "https://example.com")!)
-    /// let data = try await client.challenge(type: .assertion)
     ///
-    /// // Obtain this from the server using client.challenge(type: .assertion)
-    /// var challenge: Data(data.utf8)
+    /// // Obtain this from the server using client.challenge() based on return type.
+    /// let result: CredentialAssertionOptions = try await client.challenge()
+    ///
     /// let platformProvider = ASAuthorizationPlatformPublicKeyCredentialProvider("example.com")
-    /// let platformKeyRequest = platformProvider.createCredentialAssertionRequestWithChallenge(challenge)
+    /// let platformKeyRequest = platformProvider.createCredentialAssertionRequestWithChallenge(result.challenge)
     /// let authController = ASAuthorizationController([platformKeyRequest])
     /// authController.delegate = self
     /// authController.presentationContextProvider = self
@@ -303,7 +245,7 @@ public struct RelyingPartyClient {
     ///  // Handle the error.
     ///}
     /// ```
-    public func signin(signature: Data, clientDataJSON: Data, authenticatorData: Data, credentialId: Data, userId: Data) async throws -> Token {
+    public func signin<T>(signature: Data, clientDataJSON: Data, authenticatorData: Data, credentialId: Data, userId: Data) async throws -> T where T: AuthenticationMethod {
         // Create and encode the FIDO2 registration data.
         let verification = FIDO2Verification(clientDataJSON: clientDataJSON.base64UrlEncodedString(),
                                              authenticatorData: authenticatorData.base64UrlEncodedString(),
@@ -326,6 +268,147 @@ public struct RelyingPartyClient {
             throw String(decoding: data, as: UTF8.self)
         }
         
-        return try self.decoder.decode(Token.self, from: data)
+        return try self.decoder.decode(T.self, from: data)
+    }
+    
+    /// A request to present an attestation object containing a public key to the server for attestation verification and storage.
+    /// - Parameters:
+    ///   - nickname: The friendly name for the registration.
+    ///   - clientDataJSON: Raw data that contains a JSON-compatible encoding of the client data.
+    ///   - attestationObject: A data object that contains the returned attestation.
+    ///   - credentialId: An identifier that the authenticator generates during registration to uniquely identify a specific credential.
+    ///   - headers: A dictionary of custom headers to include in the request.
+    ///
+    /// The `headers` parameter is provided for convenience to support callers using cookie-based authentication.  The relying party server should also support cookie-based authentication for this method to complete.  An example request for registering a FIDO authenticator:
+    ///
+    /// ```
+    /// // Register a new account on a service
+    /// let client = RelyingPartyClient(baseURL: URL(string: "https://example.com")!)
+    ///
+    /// // Obtain this from the server using client.challenge() based on return type.
+    /// let result: CredentialRegistrationOptions = try await client.challenge(headers: ["auth_session": "e5f6g7h8"])
+    ///
+    /// let platformProvider = ASAuthorizationPlatformPublicKeyCredentialProvider("example.com")
+    /// let platformKeyRequest = platformProvider.createCredentialRegistrationRequest(challenge: result.challenge, name: result.user.name, userID: result.user.id)
+    /// let authController = ASAuthorizationController([platformKeyRequest])
+    /// authController.delegate = self
+    /// authController.presentationContextProvider = self
+    /// authController.performRequests()
+    ///
+    /// // Respond to the request.
+    /// func authorizationController(controller: controller, didCompleteWithAuthorization: authorization) {
+    ///  if let credential = authorization.credential as? ASAuthorizationPlatformPublicKeyCredentialRegistration {
+    ///    // Take steps to handle the registration.
+    ///    try await client.register(nickname: "Anne Johnson", clientDataJSON: credential.rawClientDataJSON, attestationObject: credential.rawAttestationObject, credentialId: credential.userID, headers: ["auth_session": "e5f6g7h8"])
+    ///  }
+    /// }
+    ///
+    /// func authorizationController(controller: controller, didCompleteWithError: error) {
+    ///  // Handle the error.
+    ///}
+    ///
+    /// ```
+    public func register(nickname: String, clientDataJSON: Data, attestationObject: Data, credentialId: Data, headers: [String: String]) async throws {
+        do {
+            // Create the request.
+            var (request, body) = try await createRegisterRequest(nickname: nickname, clientDataJSON: clientDataJSON, attestationObject: attestationObject, credentialId: credentialId)
+            
+            // Add additional headers if available.
+            if var allHeaders = request.allHTTPHeaderFields {
+                allHeaders.merge(headers) { (current, _) in current }
+                request.allHTTPHeaderFields = allHeaders
+            }
+            
+            // Submit the request and decode the response.
+            let (data, response) = try await URLSession.shared.upload(for: request, from: body)
+            
+            // Check the response status for 200 range.
+            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                throw String(decoding: data, as: UTF8.self)
+            }
+        }
+        catch let error {
+            throw String(error.localizedDescription)
+        }
+    }
+    
+    /// A request to present an attestation object containing a public key to the server for attestation verification and storage.
+    /// - Parameters:
+    ///   - nickname: The friendly name for the registration.
+    ///   - clientDataJSON: Raw data that contains a JSON-compatible encoding of the client data.
+    ///   - attestationObject: A data object that contains the returned attestation.
+    ///   - credentialId: An identifier that the authenticator generates during registration to uniquely identify a specific credential.
+    ///   - token: Represents an access token.
+    ///
+    /// An example request for registering a FIDO authenticator:
+    ///
+    /// ```
+    /// // Register a new account on a service
+    /// let client = RelyingPartyClient(baseURL: URL(string: "https://example.com")!)
+    /// let token = try await client.authenticate(username: anne_johnson, password: "a1b2c3d4")
+    ///
+    /// // Obtain this from the server using client.challenge() based on return type.
+    /// let result = try await client.challenge(token: token)
+    ///
+    /// let platformProvider = ASAuthorizationPlatformPublicKeyCredentialProvider("example.com")
+    /// let platformKeyRequest = platformProvider.createCredentialRegistrationRequest(challenge: result.challenge, name: result.user.name, userID: result.user.id)
+    /// let authController = ASAuthorizationController([platformKeyRequest])
+    /// authController.delegate = self
+    /// authController.presentationContextProvider = self
+    /// authController.performRequests()
+    ///
+    /// // Respond to the request.
+    /// func authorizationController(controller: controller, didCompleteWithAuthorization: authorization) {
+    ///  if let credential = authorization.credential as? ASAuthorizationPlatformPublicKeyCredentialRegistration {
+    ///    // Take steps to handle the registration.
+    ///    try await client.register(nickname: "anne_johnson", clientDataJSON: credential.rawClientDataJSON, attestationObject: credential.rawAttestationObject, credentialId: credential.userID, token: token)
+    ///  }
+    /// }
+    ///
+    /// func authorizationController(controller: controller, didCompleteWithError: error) {
+    ///  // Handle the error.
+    ///}
+    /// ```
+    public func register(nickname: String, clientDataJSON: Data, attestationObject: Data, credentialId: Data, token: Token) async throws {
+        do {
+            // Create the request.
+            var (request, body) = try await createRegisterRequest(nickname: nickname, clientDataJSON: clientDataJSON, attestationObject: attestationObject, credentialId: credentialId)
+            request.setValue(token.authorizationHeader, forHTTPHeaderField: "Authorization")
+            
+            // Submit the request and decode the response.
+            let (data, response) = try await URLSession.shared.upload(for: request, from: body)
+            
+            // Check the response status for 200 range.
+            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                throw String(decoding: data, as: UTF8.self)
+            }
+        }
+        catch let error {
+            throw String(error.localizedDescription)
+        }
+    }
+    
+    /// Creates and returns a`URLRequest` and the body as `Encodable` for an autheticator attestation registration.
+    /// - Parameters:
+    ///   - nickname: The friendly name for the registration.
+    ///   - clientDataJSON: Raw data that contains a JSON-compatible encoding of the client data.
+    ///   - attestationObject: A data object that contains the returned attestation.
+    ///   - credentialId: An identifier that the authenticator generates during registration to uniquely identify a specific credential.
+    ///   - token: Represents an access token.
+    private func createRegisterRequest(nickname: String, clientDataJSON: Data, attestationObject: Data, credentialId: Data) async throws-> (URLRequest, Data) {
+        // Create and encode the FIDO2 registration data.
+        let registration = FIDO2Registration(nickname: nickname,
+                                             clientDataJSON: clientDataJSON.base64UrlEncodedString(),
+                                             attestationObject: attestationObject.base64UrlEncodedString(),
+                                             credentialId: credentialId.base64UrlEncodedString())
+        let body = try JSONEncoder().encode(registration)
+        
+        let url = baseURL.appendingPathComponent("/v1/register")
+        
+        // Set the request properties.
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        return (request, body)
     }
 }
