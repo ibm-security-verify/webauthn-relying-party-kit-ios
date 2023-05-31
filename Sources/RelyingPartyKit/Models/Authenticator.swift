@@ -29,10 +29,10 @@ public struct CredentialRegistrationOptions: CredentialsOptions {
     public let user: User
     
     /// An Array of objects describing existing credentials that are already mapped to this user account.
-    public let excludeCredentials: [ExcludeCredential]?
+    public let excludeCredentials: [ExcludeCredential]
     
     /// An object whose properties are criteria used to filter out the potential authenticators for the credential creation operation.
-    public let authenticatorSelection: AuthenticatorSelection?
+    public let authenticatorSelection: AuthenticatorSelection
     
     //// An Array of objects which specify the key types and signature algorithms the Relying Party supports, ordered from most preferred to least preferred. The client and authenticator will make a best-effort to create a credential of the most preferred type possible.
     public let pubKeyCredParams: [PubKeyCredParam]
@@ -51,7 +51,7 @@ public struct CredentialRegistrationOptions: CredentialsOptions {
         self.rp = try container.decode(Rp.self, forKey: .rp)
         self.user = try container.decode(User.self, forKey: .user)
         self.excludeCredentials = try container.decodeIfPresent([ExcludeCredential].self, forKey: .excludeCredentials) ?? []
-        self.authenticatorSelection = try? container.decodeIfPresent(AuthenticatorSelection.self, forKey: .authenticatorSelection)
+        self.authenticatorSelection = try container.decode(AuthenticatorSelection.self, forKey: .authenticatorSelection)
         self.pubKeyCredParams = try container.decode([PubKeyCredParam].self, forKey: .pubKeyCredParams)
         self.extensions = try container.decodeIfPresent(Extension.self, forKey: .extensions)
     }
@@ -82,16 +82,33 @@ public struct CredentialRegistrationOptions: CredentialsOptions {
     /// The capabilities and settings that the authenticator.
     public struct AuthenticatorSelection: Codable {
         /// Eligible authenticators are filtered to be only those authenticators attached with the specified authenticator attachment modality.  i.e `platform` or `cross-platform`.
+        ///
+        /// Default is `platform`.
         public let authenticatorAttachment: String
         
         /// The extent to which the Relying Party desires to create a client-side discoverable credential. i.e `discouraged`, `preferred` or `required`.
+        ///
+        /// Default is `required`.
         public let residentKey: String
         
         /// A boolean. If set to `true`, it indicates that a resident key is required.
+        ///
+        /// Default is `true`.
         public let requireResidentKey: Bool
         
         /// Specifies the Relying Party's requirements regarding user verification.  i.e `discouraged`, `preferred` or `required`.
+        ///
+        /// Default is `required`.
         public let userVerification: String
+        
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            
+            self.authenticatorAttachment = try container.decodeIfPresent(String.self, forKey: .authenticatorAttachment) ?? "platform"
+            self.requireResidentKey = try container.decodeIfPresent(Bool.self, forKey: .requireResidentKey) ?? true
+            self.residentKey = try container.decodeIfPresent(String.self, forKey: .residentKey) ?? "required"
+            self.userVerification = try container.decodeIfPresent(String.self, forKey: .userVerification) ?? "required"
+        }
     }
     
     /// The key type and signature algorithm the Relying Party supports, ordered from most preferred to least preferred.
