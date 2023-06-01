@@ -4,8 +4,32 @@
 
 import Foundation
 
+/// An interface for generating an authentication method.
+public protocol AuthenticationMethod: Codable {}
+
+/// Represent cookie-based session headers.
+@dynamicMemberLookup
+public struct Cookies: AuthenticationMethod {
+    /// An array of HTTP cookie headers that define an authenticated session.
+    public let items: [String: String]
+    
+    /// Returns the value of a given key path.
+    /// - Parameters:
+    ///   - keyPath: A key path to a specific value on the wrapped object.
+    /// - Returns: An optional `String` otherwise `nil`.
+    ///
+    /// ```
+    /// let cookies = Cookies(items: ["auth_session": "a1b2c3d4"])
+    /// print(cookies.auth_session)
+    /// print(cookies[keyPath: \Cookies.auth_session])
+    /// ```
+    subscript(dynamicMember keyPath: String) -> String? {
+        return items[keyPath]
+    }
+}
+
 /// Represents an access token.
-public struct Token: Codable {
+public struct Token: AuthenticationMethod {
     /// The access token that is issued by the authorization server.
     public let accessToken: String
     
@@ -23,7 +47,6 @@ public struct Token: Codable {
     ///
     /// Default is `nil`.
     public let idToken: String?
-    
     
     /// The HTTP authorization header value for requests to an OpenID Connect service.
     ///

@@ -16,7 +16,7 @@ Go to the [Apple Developer Site](https://developer.apple.com/documentation/authe
 RelyingPartyKit is available as a Swift Package Manager package.  To use it, specify the package as a dependency in your Xcode project or `Package.swift` file:
 
 ```
-.package(url: "https://github.com/ibm-security-verify/relyingpartykit.git")
+.package(url: "https://github.com/ibm-security-verify/webauthn-relying-party-kit-ios.git")
 ```
 
 ## Contents
@@ -51,14 +51,14 @@ let token = try await client.authenticate(username: "anne_johnson@icloud.com", p
 ```
 
 ### Registering for Passkey
-This scenario requires the user to be authenticated with a valid `Token`. Registering for Passkey uses [ASAuthorizationControllerDelegate](https://developer.apple.com/documentation/authenticationservices/asauthorizationcontrollerdelegate/) to handle the result of the platform key registration request.
+This scenario requires the user to be authenticated with a valid `Token`.  Cookie-based authenticated user is available using the `headers` parameter where supported by the relying party server.  Registering for Passkey uses [ASAuthorizationControllerDelegate](https://developer.apple.com/documentation/authenticationservices/asauthorizationcontrollerdelegate/) to handle the result of the platform key registration request.
 
 ```
 import RelyingPartyKit
 
 // The baseURL is the host of the relying party server.
 let client = RelyingPartyClient(baseURL: URL(string: "https://example.com")!)
-
+let token = try await client.authenticate(username: "account@example.com", password: "a1b2c3d4")
 let nickname = "Anne's iPhone"
 
 // First generate a challenge from the relying party server.
@@ -117,7 +117,7 @@ controller.performRequests()
 func authorizationController(controller: controller, didCompleteWithAuthorization: authorization) {
     if let credential = authorization.credential as? ASAuthorizationPlatformPublicKeyCredentialAssertion {
         // Take steps to handle the assertion.
-        client.signin(signature: credential.signature,
+        let result: Token = try await client.signin(signature: credential.signature,
             clientDataJSON: credential.rawClientDataJSON,
             authenticatorData: credential.rawAuthenticatorData,
             credentialId: credential.credentialID,
