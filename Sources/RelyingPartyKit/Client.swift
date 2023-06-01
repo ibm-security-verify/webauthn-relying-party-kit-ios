@@ -206,7 +206,7 @@ public struct RelyingPartyClient {
         // Create the CredentialOptions object.
         return try self.decoder.decode(T.self, from: data)
     }
-    
+  
     /// A request to present the signed challenge to the server for verification.
     /// - Parameters:
     ///   - signature: The signature for the assertion.

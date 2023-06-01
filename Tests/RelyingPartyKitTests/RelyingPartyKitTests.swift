@@ -95,7 +95,7 @@ final class RelyingPartyKitTests: XCTestCase {
         XCTAssertNotNil(result)
     }
     
-    func testChallengeAttestationErrorNoDisplay() async throws {
+   func testChallengeAttestationErrorNoDisplay() async throws {
         // Given
         let client = RelyingPartyClient(baseURL: URL(string: baseURL)!)
         
@@ -229,3 +229,4 @@ final class RelyingPartyKitTests: XCTestCase {
         }
     }
 }
+
