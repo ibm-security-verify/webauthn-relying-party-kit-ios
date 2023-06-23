@@ -268,6 +268,18 @@ public struct RelyingPartyClient {
             throw String(decoding: data, as: UTF8.self)
         }
         
+        // Convert the response cookies into JSON
+        if T.self is Cookies.Type, let headers = httpResponse.allHeaderFields as? [String: String] {
+            let cookies = HTTPCookie.cookies(withResponseHeaderFields: headers, for: url)
+            let values = cookies.reduce(into: [String: String]()) {
+                $0[$1.name] = $1.value
+            }
+            
+            // Convert the structure into Data object.
+            let data = try JSONSerialization.data(withJSONObject: ["items": values])
+            return try self.decoder.decode(T.self, from: data)
+        }
+                                                     
         return try self.decoder.decode(T.self, from: data)
     }
     
