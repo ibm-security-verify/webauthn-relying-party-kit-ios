@@ -15,7 +15,7 @@ Go to the [Apple Developer Site](https://developer.apple.com/documentation/authe
 
 RelyingPartyKit is available as a Swift Package Manager package.  To use it, specify the package as a dependency in your Xcode project or `Package.swift` file:
 
-```
+```swift
 .package(url: "https://github.com/ibm-security-verify/webauthn-relying-party-kit-ios.git")
 ```
 
@@ -24,7 +24,7 @@ RelyingPartyKit is available as a Swift Package Manager package.  To use it, spe
 ### Allowing a user to sign-up
 This scenario is where the user doesn't exist in your identity system and requires ownership of an email address for validation.
 
-```
+```swift
 import RelyingPartyKit
 
 // The baseURL is the host of the relying party server.
@@ -40,7 +40,7 @@ let token = try await client.validate(transactionId: result.transactionId, otp: 
 ### Authenticating an existing user
 This scenario authenticates an existing user with a username and password.
 
-```
+```swift
 import RelyingPartyKit
 
 // The baseURL is the host of the relying party server.
@@ -53,7 +53,7 @@ let token = try await client.authenticate(username: "anne_johnson@icloud.com", p
 ### Registering for Passkey
 This scenario requires the user to be authenticated with a valid `Token`.  Cookie-based authenticated user is available using the `headers` parameter where supported by the relying party server.  Registering for Passkey uses [ASAuthorizationControllerDelegate](https://developer.apple.com/documentation/authenticationservices/asauthorizationcontrollerdelegate/) to handle the result of the platform key registration request.
 
-```
+```swift
 import RelyingPartyKit
 
 // The baseURL is the host of the relying party server.
@@ -94,7 +94,7 @@ func authorizationController(controller: controller, didCompleteWithAuthorizatio
 ### Verifying an account with Passkey
 This scenario is for users who have previously registered their device using Passkey. Similar to registering for Passkey, it uses [ASAuthorizationControllerDelegate](https://developer.apple.com/documentation/authenticationservices/asauthorizationcontrollerdelegate/) to handle the result of the platform key assertion request.
 
-```
+```swift
 import RelyingPartyKit
 
 // The baseURL is the host of the relying party server.
