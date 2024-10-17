@@ -1,11 +1,11 @@
-# IBM Security Verify Relying Party Kit for iOS
+# IBM Security Verify WebAuthn Relying Party Kit for iOS
 
 Deliver Apple Passkey solutions to your users.
 
 ## Overview
 
 
-The IBM Security Verify Relying Party Kit for iOS is the client-side companion to [IBM Security Verify Relying Party Server for Swift](https://github.com/ibm-security-verify/webauthn-relying-party-server-swift) which exposes REST API's hosted in a Docker image. 
+The IBM Security Verify WebAuthn Relying Party Kit for iOS is the client-side companion to [IBM Security Verify WebAuthn Relying Party Server for Swift](https://github.com/ibm-security-verify/webauthn-relying-party-server-swift) which exposes REST API's hosted in a Docker image. 
 
 RelyingPartyKit is a lightweight framework that provides the ability for existing users to register their device with Apple Passkey and subsequently sign-in without a password and for new users to sign-up and validate their account.
 
