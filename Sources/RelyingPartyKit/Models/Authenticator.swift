@@ -1,5 +1,5 @@
 //
-// Copyright contributors to the IBM Security Verify Relying Party Kit for iOS project
+// Copyright contributors to the IBM Verify Relying Party Kit for iOS project
 //
 
 import Foundation

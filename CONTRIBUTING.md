@@ -7,7 +7,7 @@ This SDK follows coding style based on [API Design Guidelines](https://swift.org
 
 ## Issues and Questions
 
-If you encounter an issue, have a question or want to suggest an enhancement to the IBM Security Verify Relying Party Kit for iOS, you are welcome to submit a [request](https://github.com/ibm-security-verify/webauthn-relying-party-kit-ios/issues).
+If you encounter an issue, have a question or want to suggest an enhancement to the IBM Verify Relying Party Kit for iOS, you are welcome to submit a [request](https://github.com/ibm-verify/webauthn-relying-party-kit-ios/issues).
 Before that, please search for similar issues. It's possible somebody has encountered this issue already.
 
 ## Pull Requests
