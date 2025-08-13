@@ -7,7 +7,7 @@ Ce SDK suit un style de codage basé sur [les directives de conception de l'API]
 
 ## Problèmes et questions
 
-Si vous rencontrez un problème, avez une question ou souhaitez suggérer une amélioration du kit de confiance ( IBM ) Security Verify pour iOS,, vous pouvez envoyer [une demande](https://github.com/ibm-security-verify/webauthn-relying-party-kit-ios/issues).
+Si vous rencontrez un problème, avez une question ou souhaitez suggérer une amélioration du kit de confiance ( IBM ) Security Verify pour iOS,, vous pouvez envoyer [une demande](https://github.com/ibm-verify/webauthn-relying-party-kit-ios/issues).
 Avant cela, veuillez rechercher des problèmes similaires. Il est possible que quelqu'un ait déjà rencontré ce problème.
 
 ## Demandes d'extraction
